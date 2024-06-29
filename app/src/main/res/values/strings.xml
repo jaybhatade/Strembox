@@ -1,3 +1,8 @@
 <resources>
     <string name="app_name">StreamBox</string>
+    <string name="home" >Home</string>
+    <string name="movies">Movies</string>
+    <string name="Premium">Premium</string>
+    <string name="profile">Profile</string>
+    <string name="setting">Setting</string>
 </resources>
