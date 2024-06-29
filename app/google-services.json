@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "339579014087",
+    "project_id": "streambox-70a34",
+    "storage_bucket": "streambox-70a34.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:339579014087:android:02e288a2d115df8978e7e2",
+        "android_client_info": {
+          "package_name": "com.example.finalapp"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAoQdn8giRe1MfTito5nO5wLwSO-wDhknA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
