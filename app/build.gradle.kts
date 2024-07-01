@@ -35,7 +35,6 @@ android {
 
 dependencies {
     implementation(libs.material.vversion)
-    implementation(libs.github.autoimageslider)
     implementation(libs.appcompat)
     implementation(libs.material)
     implementation(libs.activity)
