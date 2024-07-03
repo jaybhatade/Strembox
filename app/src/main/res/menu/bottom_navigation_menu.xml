@@ -1,28 +1,29 @@
 <?xml version="1.0" encoding="utf-8"?>
-<menu xmlns:android="http://schemas.android.com/apk/res/android">
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    >
     <item
-        android:id="@+id/page_1"
-        android:enabled="true"
-        android:icon="@drawable/homeicon"
-        android:title="@string/home"/>
+        android:id="@+id/home"
+        android:icon="@drawable/home_icon"
+        android:title="@string/home" />
     <item
-        android:id="@+id/page_2"
+        android:id="@+id/movies"
         android:enabled="true"
-        android:icon="@drawable/moviesicon"
+        android:icon="@drawable/movie_icon"
         android:title="@string/movies"/>
     <item
-        android:id="@+id/page_3"
-        android:enabled="true"
-        android:icon="@drawable/premiumicon"
+        android:id="@+id/premium"
+
+        android:icon="@drawable/premium_icon"
         android:title="@string/Premium"/>
     <item
-        android:id="@+id/page_4"
-        android:enabled="true"
-        android:icon="@drawable/profileicon"
+
+        android:id="@+id/profile"
+
+        android:icon="@drawable/profile_icon"
         android:title="@string/profile"/>
     <item
-        android:id="@+id/page_5"
-        android:enabled="true"
-        android:icon="@drawable/settingsicon"
+        android:id="@+id/setting"
+
+        android:icon="@drawable/setting_icon"
         android:title="@string/setting"/>
 </menu>
