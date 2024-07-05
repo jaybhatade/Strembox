@@ -12,6 +12,7 @@ legacySupportV4 = "1.0.0"
 googleGmsGoogleServices = "4.4.2"
 firebaseAuth = "23.0.0"
 materialVersion = "<version>"
+webkit = "1.11.0"
 
 [libraries]
 github-autoimageslider = { module = "com.github.smarteist:autoimageslider", version.ref = "githubAutoimageslider" }
@@ -25,6 +26,7 @@ constraintlayout = { group = "androidx.constraintlayout", name = "constraintlayo
 legacy-support-v4 = { group = "androidx.legacy", name = "legacy-support-v4", version.ref = "legacySupportV4" }
 firebase-auth = { group = "com.google.firebase", name = "firebase-auth", version.ref = "firebaseAuth" }
 material-vversion = { module = "com.google.android.material:material", version.ref = "materialVersion" }
+webkit = { module = "androidx.webkit:webkit", version.ref = "webkit" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
