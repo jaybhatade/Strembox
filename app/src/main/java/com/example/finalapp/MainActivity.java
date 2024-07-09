@@ -1,15 +1,24 @@
 package com.example.finalapp;
 
+import android.content.Context;
 import android.content.Intent;
+import android.content.pm.ActivityInfo;
+import android.content.res.Configuration;
+import android.net.ConnectivityManager;
+import android.net.NetworkCapabilities;
+import android.os.Build;
 import android.os.Bundle;
+import android.view.View;
+import android.webkit.WebChromeClient;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
+import android.widget.FrameLayout;
 
 import androidx.activity.ComponentActivity;
+import androidx.activity.OnBackPressedCallback;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
-import androidx.annotation.NonNull;
 
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
@@ -19,11 +28,14 @@ public class MainActivity extends ComponentActivity {
     private FirebaseUser user;
     private WebView webView;
     private ActivityResultLauncher<Intent> loginLauncher;
+    private View customView;
+    private WebChromeClient.CustomViewCallback customViewCallback;
+    private FrameLayout fullscreenContainer;
+    private int originalOrientation;
 
-    // Define your allowed URLs here
     private static final String[] ALLOWED_URLS = {
             "https://streamboxweb.netlify.app/",
-             // Add ore URLs as needed
+            // Add more URLs as needed
     };
 
     @Override
@@ -31,76 +43,183 @@ public class MainActivity extends ComponentActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        // Initialize FirebaseAuth instance
         auth = FirebaseAuth.getInstance();
-
-        // Check if user is already signed in
         user = auth.getCurrentUser();
-        if (user == null) {
-            // If not signed in, launch login activity
-            startLoginActivity();
+
+        fullscreenContainer = findViewById(R.id.fullscreen_container);
+
+        setupLoginLauncher();
+        setupBackPressHandler();
+
+        if (savedInstanceState == null) {
+            checkInternetAndProceed();
         } else {
-            // User is already signed in, proceed with WebView setup
-            setupWebView();
+            restoreWebViewState(savedInstanceState);
         }
     }
 
-    private void setupWebView() {
-        webView = findViewById(R.id.webview);
-
-        // Enable JavaScript
-        WebSettings webSettings = webView.getSettings();
-        webSettings.setJavaScriptEnabled(true);
-
-        // Other WebView settings for performance and security
-        webSettings.setDomStorageEnabled(true); // Enable DOM Storage
-
-        // Set WebViewClient to handle page navigation within WebView
-        webView.setWebViewClient(new WhitelistWebViewClient(ALLOWED_URLS));
-
-        // Load the initial URL in the WebView
-        webView.loadUrl(ALLOWED_URLS[0]); // Load the first allowed URL
-    }
-
-    private void startLoginActivity() {
-        // Initialize ActivityResultLauncher for login activity
+    private void setupLoginLauncher() {
         loginLauncher = registerForActivityResult(
                 new ActivityResultContracts.StartActivityForResult(),
                 result -> {
                     if (result.getResultCode() == RESULT_OK) {
-                        // Handle successful login
                         user = auth.getCurrentUser();
                         if (user != null) {
-                            // Reload WebView after successful login
                             setupWebView();
                         } else {
-                            // Handle unexpected case where user is null after login
                             finish();
                         }
                     } else {
-                        // Handle unsuccessful login or cancellation
                         finish();
                     }
                 });
+    }
 
-        // Launch the login activity
+    private void setupBackPressHandler() {
+        getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
+            @Override
+            public void handleOnBackPressed() {
+                if (customView != null) {
+                    hideCustomView();
+                } else if (webView != null && webView.canGoBack()) {
+                    webView.goBack();
+                } else {
+                    setEnabled(false);
+                    MainActivity.super.getOnBackPressedDispatcher().onBackPressed();
+                }
+            }
+        });
+    }
+
+    private void checkInternetAndProceed() {
+        if (!isInternetConnected()) {
+            startNoInternetActivity();
+        } else if (user == null) {
+            startLoginActivity();
+        } else {
+            setupWebView();
+        }
+    }
+
+    private boolean isInternetConnected() {
+        ConnectivityManager connectivityManager = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+        if (connectivityManager == null) return false;
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            NetworkCapabilities capabilities = connectivityManager.getNetworkCapabilities(connectivityManager.getActiveNetwork());
+            return capabilities != null && (capabilities.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) ||
+                    capabilities.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR));
+        } else {
+            @SuppressWarnings("deprecation")
+            android.net.NetworkInfo activeNetworkInfo = connectivityManager.getActiveNetworkInfo();
+            return activeNetworkInfo != null && activeNetworkInfo.isConnected();
+        }
+    }
+
+    private void startNoInternetActivity() {
+        Intent intent = new Intent(this, NoInternetActivity.class);
+        startActivity(intent);
+        finish();
+    }
+
+    private void startLoginActivity() {
         Intent loginIntent = new Intent(MainActivity.this, LoginPage.class);
         loginLauncher.launch(loginIntent);
     }
 
-    @Override
-    public void onBackPressed() {
-        // Check if WebView can go back
-        if (webView != null && webView.canGoBack()) {
-            webView.goBack();
-        } else {
-            super.onBackPressed();
+    private void setupWebView() {
+        webView = findViewById(R.id.webview);
+        WebSettings webSettings = webView.getSettings();
+        webSettings.setJavaScriptEnabled(true);
+        webSettings.setDomStorageEnabled(true);
+        webSettings.setSupportZoom(true);
+        webSettings.setBuiltInZoomControls(true);
+        webSettings.setDisplayZoomControls(false);
+
+        webView.setWebViewClient(new WhitelistWebViewClient(ALLOWED_URLS));
+        webView.setWebChromeClient(new CustomWebChromeClient());
+
+        if (webView.getUrl() == null) {
+            webView.loadUrl(ALLOWED_URLS[0]);
         }
     }
 
-    // Custom WebViewClient for whitelisting URLs
+    private class CustomWebChromeClient extends WebChromeClient {
+        @Override
+        public void onShowCustomView(View view, CustomViewCallback callback) {
+            if (customView != null) {
+                callback.onCustomViewHidden();
+                return;
+            }
+            customView = view;
+            originalOrientation = getRequestedOrientation();
+            customViewCallback = callback;
+            fullscreenContainer.addView(customView);
+            fullscreenContainer.setVisibility(View.VISIBLE);
+            webView.setVisibility(View.GONE);
+            setFullscreen(true);
+            setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_SENSOR);
+        }
+
+        @Override
+        public void onHideCustomView() {
+            hideCustomView();
+        }
+    }
+
+    private void hideCustomView() {
+        if (customView == null) return;
+
+        setFullscreen(false);
+        fullscreenContainer.removeView(customView);
+        fullscreenContainer.setVisibility(View.GONE);
+        customView = null;
+        customViewCallback.onCustomViewHidden();
+        webView.setVisibility(View.VISIBLE);
+        setRequestedOrientation(originalOrientation);
+    }
+
+    private void setFullscreen(boolean fullscreen) {
+        if (fullscreen) {
+            getWindow().getDecorView().setSystemUiVisibility(
+                    View.SYSTEM_UI_FLAG_FULLSCREEN |
+                            View.SYSTEM_UI_FLAG_HIDE_NAVIGATION |
+                            View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY);
+        } else {
+            getWindow().getDecorView().setSystemUiVisibility(
+                    View.SYSTEM_UI_FLAG_VISIBLE);
+        }
+    }
+
+    private void restoreWebViewState(Bundle savedInstanceState) {
+        webView = findViewById(R.id.webview);
+        webView.restoreState(savedInstanceState);
+    }
+
+    @Override
+    protected void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+        if (webView != null) {
+            webView.saveState(outState);
+        }
+    }
+
+    @Override
+    public void onConfigurationChanged(Configuration newConfig) {
+        super.onConfigurationChanged(newConfig);
+        // Do nothing here to prevent activity restart
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        if (!isInternetConnected()) {
+            startNoInternetActivity();
+        }
+    }
+
     private static class WhitelistWebViewClient extends WebViewClient {
-        private String[] allowedUrls;
+        private final String[] allowedUrls;
 
         public WhitelistWebViewClient(String[] allowedUrls) {
             this.allowedUrls = allowedUrls;
@@ -108,14 +227,12 @@ public class MainActivity extends ComponentActivity {
 
         @Override
         public boolean shouldOverrideUrlLoading(WebView view, String url) {
-            // Check if the URL is in the allowed list
             for (String allowedUrl : allowedUrls) {
                 if (url.startsWith(allowedUrl)) {
                     return false; // Allow the WebView to load the URL
                 }
             }
-            // Block the URL
-            return true;
+            return true; // Block the URL
         }
     }
 }
