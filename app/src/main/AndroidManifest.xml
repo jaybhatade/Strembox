@@ -18,22 +18,18 @@
         <activity
             android:name=".NoInternetActivity"
             android:exported="false" />
-        <activity
-            android:name=".LoginPage"
-            android:exported="false" />
+
         <activity
             android:name=".MainActivity"
             android:configChanges="orientation|screenSize|screenLayout|keyboardHidden"
-            android:exported="false" />
-        <activity
-            android:name=".signup_page"
-            android:exported="true">
+            android:exported="true" >
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
     </application>
 
 </manifest>

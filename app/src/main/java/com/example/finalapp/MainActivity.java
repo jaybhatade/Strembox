@@ -17,17 +17,9 @@ import android.widget.FrameLayout;
 
 import androidx.activity.ComponentActivity;
 import androidx.activity.OnBackPressedCallback;
-import androidx.activity.result.ActivityResultLauncher;
-import androidx.activity.result.contract.ActivityResultContracts;
-
-import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.auth.FirebaseUser;
 
 public class MainActivity extends ComponentActivity {
-    private FirebaseAuth auth;
-    private FirebaseUser user;
     private WebView webView;
-    private ActivityResultLauncher<Intent> loginLauncher;
     private View customView;
     private WebChromeClient.CustomViewCallback customViewCallback;
     private FrameLayout fullscreenContainer;
@@ -43,12 +35,8 @@ public class MainActivity extends ComponentActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        auth = FirebaseAuth.getInstance();
-        user = auth.getCurrentUser();
-
         fullscreenContainer = findViewById(R.id.fullscreen_container);
 
-        setupLoginLauncher();
         setupBackPressHandler();
 
         if (savedInstanceState == null) {
@@ -56,23 +44,6 @@ public class MainActivity extends ComponentActivity {
         } else {
             restoreWebViewState(savedInstanceState);
         }
-    }
-
-    private void setupLoginLauncher() {
-        loginLauncher = registerForActivityResult(
-                new ActivityResultContracts.StartActivityForResult(),
-                result -> {
-                    if (result.getResultCode() == RESULT_OK) {
-                        user = auth.getCurrentUser();
-                        if (user != null) {
-                            setupWebView();
-                        } else {
-                            finish();
-                        }
-                    } else {
-                        finish();
-                    }
-                });
     }
 
     private void setupBackPressHandler() {
@@ -94,8 +65,6 @@ public class MainActivity extends ComponentActivity {
     private void checkInternetAndProceed() {
         if (!isInternetConnected()) {
             startNoInternetActivity();
-        } else if (user == null) {
-            startLoginActivity();
         } else {
             setupWebView();
         }
@@ -120,11 +89,6 @@ public class MainActivity extends ComponentActivity {
         Intent intent = new Intent(this, NoInternetActivity.class);
         startActivity(intent);
         finish();
-    }
-
-    private void startLoginActivity() {
-        Intent loginIntent = new Intent(MainActivity.this, LoginPage.class);
-        loginLauncher.launch(loginIntent);
     }
 
     private void setupWebView() {
